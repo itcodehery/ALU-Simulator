@@ -23,6 +23,10 @@ fn main() {
     show_menu();
 }
 
+// This should eventually ask the user these options:
+// 1. Unary Functions
+//      a. Complement
+// 2. Binary Functions
 fn show_menu() {
     println!("Select operation:");
     println!("1. Half Adder");

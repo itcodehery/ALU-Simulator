@@ -24,3 +24,7 @@ pub fn nand(val1: bool, val2: bool) -> bool {
 pub fn nor(val1: bool, val2: bool) -> bool {
     return !(or(val1, val2));
 }
+
+pub fn three_inp_and(val1: bool, val2: bool, val3: bool) -> bool {
+    val1 && val2 && val3
+}
