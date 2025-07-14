@@ -9,9 +9,9 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use comb_circuits::adders::{full_adder, half_adder};
-use comb_circuits::logic_gates::{and, not, or, xor};
+// use comb_circuits::logic_gates::{and, not, or, xor};
 
-use comb_circuits::arithmetic_circuit::arithmetic_circuit;
+// use comb_circuits::arithmetic_circuit::arithmetic_circuit;
 
 fn initialize_alu() {
     println!("------------------------");
@@ -29,7 +29,7 @@ fn main() {
 
 // This should eventually ask the user these options:
 // 1. Unary Functions
-//      a. Complement
+//      a.Complement
 // 2. Binary Functions
 fn show_menu() {
     println!("Select operation:");
