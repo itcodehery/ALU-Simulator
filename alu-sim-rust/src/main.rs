@@ -1,13 +1,17 @@
 mod comb_circuits {
     pub mod adders;
+    pub mod arithmetic_circuit;
     pub mod logic_gates;
+    pub mod multiplexer;
 }
 
 use std::thread::sleep;
 use std::time::Duration;
 
 use comb_circuits::adders::{full_adder, half_adder};
-use comb_circuits::logic_gates::and;
+use comb_circuits::logic_gates::{and, not, or, xor};
+
+use comb_circuits::arithmetic_circuit::arithmetic_circuit;
 
 fn initialize_alu() {
     println!("------------------------");

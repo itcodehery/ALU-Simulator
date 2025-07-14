@@ -1,6 +1,4 @@
-mod logic_gates;
-
-use crate::logic_gates::{not, three_inp_and};
+use crate::comb_circuits::logic_gates::{not, or, three_inp_and};
 
 pub fn four_to_one_mux(
     select1: bool,
@@ -10,7 +8,6 @@ pub fn four_to_one_mux(
     inp_3: bool,
     inp_4: bool,
 ) -> bool {
-    let mut output: bool = false;
     let not_sel_1: bool = not(select1);
     let not_sel_2: bool = not(select2);
 
