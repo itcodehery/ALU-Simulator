@@ -1,89 +1,110 @@
-mod comb_circuits {
-    pub mod adders;
-    pub mod arithmetic_circuit;
-    pub mod logic_gates;
-    pub mod multiplexer;
+use eframe::egui;
+
+// Import your existing circuit modules
+mod comb_circuits;
+
+
+fn main() -> Result<(), eframe::Error> {
+    let options = eframe::NativeOptions {
+        viewport: egui::ViewportBuilder::default().with_inner_size([800.0, 600.0]),
+        ..Default::default()
+    };
+
+    eframe::run_native(
+        "ALU Simulator",
+        options,
+        Box::new(|_cc| Ok(Box::new(AluSimulatorApp::default())),
+        ))
 }
 
-use std::thread::sleep;
-use std::time::Duration;
+#[derive(Default)]
+struct AluSimulatorApp {
+    // Input values
+    input_a: [bool; 8],
+    input_b: [bool; 8],
+    operation: AluOperation,
 
-use comb_circuits::adders::{full_adder, half_adder};
-// use comb_circuits::logic_gates::{and, not, or, xor};
+    // Output
+    result: [bool; 8],
+    carry_out: bool,
+    zero_flag: bool,
 
-// use comb_circuits::arithmetic_circuit::arithmetic_circuit;
-
-fn initialize_alu() {
-    println!("------------------------");
-    println!("Arithmetic and Logic Unit");
-    println!("------------------------");
-    println!("Initializing simulation...");
-    // Thread functions
-    let def_dur: Duration = Duration::new(2, 0);
-    sleep(def_dur);
-}
-fn main() {
-    initialize_alu();
-    show_menu();
+    // UI state
+    selected_component: String,
+    counter: i16
 }
 
-// This should eventually ask the user these options:
-// 1. Unary Functions
-//      a.Complement
-// 2. Binary Functions
-fn show_menu() {
-    println!("Select operation:");
-    println!("1. Half Adder");
-    println!("2. Full Adder");
+#[derive(Default, PartialEq)]
+enum AluOperation {
+    #[default]
+    Add,
+    Subtract,
+    And,
+    Or,
+    Xor,
+    Not,
+}
 
-    let mut choice = String::new();
-    std::io::stdin().read_line(&mut choice).unwrap();
+impl eframe::App for AluSimulatorApp {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.heading("My App");           // <- Draw heading
+            if ui.button("Click me").clicked() {  // <- Draw button, check if clicked
+                self.counter += 1;          // <- Update app state
+            }
+            ui.label(format!("Count: {}", self.counter)); // <- Draw counter
+        });
 
-    match choice.trim() {
-        "1" => half_adder_call(),
-        "2" => full_adder_call(),
-        _ => println!("Invalid choice"),
     }
 }
 
-fn half_adder_call() {
-    println!("--------------------\n");
-    println!("Half Adder:");
-    println!("Enter two Binary values: ");
-    println!("Input 1: ");
-    let mut input1: String = String::new();
-    std::io::stdin().read_line(&mut input1).unwrap();
-    println!("Input 2: ");
-    let mut input2: String = String::new();
-    std::io::stdin().read_line(&mut input2).unwrap();
-    let input1: bool = input1.trim().parse().unwrap();
-    let input2: bool = input2.trim().parse().unwrap();
-    let (sum, carry) = half_adder(input1, input2);
-    println!("Sum: {}", sum);
-    println!("Carry: {}", carry);
-    println!("--------------------\n");
-}
+impl AluSimulatorApp {
+    fn simulate(&mut self) {
+        // Convert bool arrays to your circuit format and simulate
+        let a = self.bool_array_to_u8(&self.input_a);
+        let b = self.bool_array_to_u8(&self.input_b);
 
-fn full_adder_call() {
-    println!("--------------------\n");
-    println!("Full Adder:");
-    println!("Enter three 'true' or 'false' values: ");
-    println!("Input 1: ");
-    let mut input1: String = String::new();
-    std::io::stdin().read_line(&mut input1).unwrap();
-    println!("Input 2: ");
-    let mut input2: String = String::new();
-    std::io::stdin().read_line(&mut input2).unwrap();
-    println!("Input 3 (Carry In): ");
-    let mut input3: String = String::new();
-    std::io::stdin().read_line(&mut input3).unwrap();
+        let result = match self.operation {
+            AluOperation::Add => {
+                // Use your existing adder circuit
+                let (sum, carry) = self.add_8bit(a, b);
+                self.carry_out = carry;
+                sum
+            },
+            AluOperation::Subtract => {
+                // Use your existing subtractor or implement
+                a.wrapping_sub(b)
+            },
+            AluOperation::And => a & b,
+            AluOperation::Or => a | b,
+            AluOperation::Xor => a ^ b,
+            AluOperation::Not => !a,
+        };
 
-    let input1: bool = input1.trim().parse().unwrap();
-    let input2: bool = input2.trim().parse().unwrap();
-    let input3: bool = input3.trim().parse().unwrap();
+        self.result = self.u8_to_bool_array(result);
+        self.zero_flag = result == 0;
+    }
 
-    let (sum, carry) = full_adder(input1, input2, input3);
-    println!("Sum: {}", sum);
-    println!("Carry: {}", carry);
-    println!("--------------------\n");
+    fn bool_array_to_u8(&self, arr: &[bool; 8]) -> u8 {
+        let mut result = 0u8;
+        for (i, &bit) in arr.iter().enumerate() {
+            if bit {
+                result |= 1 << i;
+            }
+        }
+        result
+    }
+
+    fn u8_to_bool_array(&self, val: u8) -> [bool; 8] {
+        let mut result = [false; 8];
+        for i in 0..8 {
+            result[i] = (val & (1 << i)) != 0;
+        }
+        result
+    }
+
+    fn add_8bit(&self, a: u8, b: u8) -> (u8, bool) {
+        let sum = a as u16 + b as u16;
+        ((sum & 0xFF) as u8, sum > 0xFF)
+    }
 }
