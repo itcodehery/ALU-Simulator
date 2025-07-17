@@ -13,98 +13,89 @@ fn main() -> Result<(), eframe::Error> {
     eframe::run_native(
         "ALU Simulator",
         options,
-        Box::new(|_cc| Ok(Box::new(AluSimulatorApp::default())),
+        Box::new(|_cc| Ok(Box::new(ALUSim::default())),
         ))
 }
 
 #[derive(Default)]
-struct AluSimulatorApp {
-    // Input values
-    input_a: [bool; 8],
-    input_b: [bool; 8],
-    operation: AluOperation,
-
-    // Output
-    result: [bool; 8],
-    carry_out: bool,
-    zero_flag: bool,
-
-    // UI state
-    selected_component: String,
-    counter: i16
+struct ALUSim {
+    operation: String,
+    operation_type:String,
+    result: String,
+    initial_num_1: [bool; 4],
+    initial_num_2: [bool; 4],
 }
 
-#[derive(Default, PartialEq)]
-enum AluOperation {
-    #[default]
-    Add,
-    Subtract,
-    And,
-    Or,
-    Xor,
-    Not,
-}
-
-impl eframe::App for AluSimulatorApp {
+impl eframe::App for ALUSim  {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("My App");           // <- Draw heading
-            if ui.button("Click me").clicked() {  // <- Draw button, check if clicked
-                self.counter += 1;          // <- Update app state
+            if self.operation_type.is_empty() {
+                self.operation_type = "unr".parse().unwrap();
             }
-            ui.label(format!("Count: {}", self.counter)); // <- Draw counter
+            if self.operation.is_empty() && self.operation_type == "unr" {
+                self.operation = "inc".parse().unwrap();
+            } else if self.operation.is_empty() && self.operation_type == "bin" {
+                self.operation = "add".parse().unwrap();
+            }
+
+            // Heading
+            ui.heading("ALU Simulator");
+            ui.separator();
+
+            // Operation Type
+            ui.horizontal(|ui| {
+                ui.label("Operation Type");
+                ui.radio_value(&mut self.operation_type, "unr".parse().unwrap(), "Unary");
+                ui.radio_value(&mut self.operation_type, "bin".parse().unwrap(), "Binary");
+            });
+
+            // Operation to be Performed
+            if self.operation_type == "unr" {
+                ui.horizontal(|ui| {
+                    ui.label("Operation: ");
+                    ui.radio_value(&mut self.operation, "inc".parse().unwrap(), "Increment");
+                    ui.radio_value(&mut self.operation, "dec".parse().unwrap(), "Decrement");
+                });
+                ui.separator();
+            }
+
+            if self.operation_type == "bin" {
+                ui.horizontal(|ui| {
+                    ui.label("Operation: ");
+                    ui.radio_value(&mut self.operation, "add".parse().unwrap(), "Addition");
+                    ui.radio_value(&mut self.operation, "sub".parse().unwrap(), "Subtraction");
+                });
+                ui.separator();
+
+            }
+            // Bits of A and B
+            ui.horizontal(|ui| {
+                ui.label("Value of A (4-bit): ");
+                for i in 0..4 {
+                    ui.checkbox(&mut self.initial_num_1[i], format!("A{}", i));
+                }
+
+                for i in 0..4 {
+                    ui.label(if self.initial_num_1[i] { "1" } else { "0" });
+                }
+            });
+            if self.operation_type == "bin" {
+                ui.horizontal(|ui| {
+                    ui.label("Value of B (4-bit): ");
+                    for i in 0..4 {
+                        ui.checkbox(&mut self.initial_num_2[i], format!("B{}", i));
+                    }
+                    for i in 0..4 {
+                        ui.label(if self.initial_num_2[i] { "1" } else { "0" });
+                    }
+                });
+            }
+            ui.separator();
+
+        // Submit
+            let _ = ui.button("Perform Action");
+
         });
 
-    }
-}
-
-impl AluSimulatorApp {
-    fn simulate(&mut self) {
-        // Convert bool arrays to your circuit format and simulate
-        let a = self.bool_array_to_u8(&self.input_a);
-        let b = self.bool_array_to_u8(&self.input_b);
-
-        let result = match self.operation {
-            AluOperation::Add => {
-                // Use your existing adder circuit
-                let (sum, carry) = self.add_8bit(a, b);
-                self.carry_out = carry;
-                sum
-            },
-            AluOperation::Subtract => {
-                // Use your existing subtractor or implement
-                a.wrapping_sub(b)
-            },
-            AluOperation::And => a & b,
-            AluOperation::Or => a | b,
-            AluOperation::Xor => a ^ b,
-            AluOperation::Not => !a,
-        };
-
-        self.result = self.u8_to_bool_array(result);
-        self.zero_flag = result == 0;
-    }
-
-    fn bool_array_to_u8(&self, arr: &[bool; 8]) -> u8 {
-        let mut result = 0u8;
-        for (i, &bit) in arr.iter().enumerate() {
-            if bit {
-                result |= 1 << i;
-            }
-        }
-        result
-    }
-
-    fn u8_to_bool_array(&self, val: u8) -> [bool; 8] {
-        let mut result = [false; 8];
-        for i in 0..8 {
-            result[i] = (val & (1 << i)) != 0;
-        }
-        result
-    }
-
-    fn add_8bit(&self, a: u8, b: u8) -> (u8, bool) {
-        let sum = a as u16 + b as u16;
-        ((sum & 0xFF) as u8, sum > 0xFF)
     }
 }
