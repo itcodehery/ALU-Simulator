@@ -21,11 +21,6 @@ pub fn logic_circuit(a: [bool; 4], b: [bool; 4], operation: &str) -> [bool; 4] {
                 result[i] = bitwise_logic(a[i], b[i], true, false);
             }
         }
-        "not" => {
-            for i in 0..4 {
-                result[i] = bitwise_logic(a[i], b[i], true, true);
-            }
-        }
         _ => {
             println!("Panic: Invalid Operation!");
         }

@@ -37,18 +37,31 @@ pub fn arithmetic_circuit(
     carry_in: bool,
 ) -> (bool, bool, bool, bool, bool) {
     const ZERO_IN: bool = false;
+    const ONE_IN: bool = true;
 
-    // Intermediate inputs to be fed into Full Adders
-    let y0: bool = four_to_one_mux(select[0], select[1], b[0], not(b[0]), ZERO_IN, not(ZERO_IN));
-    let y1: bool = four_to_one_mux(select[0], select[1], b[1], not(b[1]), ZERO_IN, not(ZERO_IN));
-    let y2: bool = four_to_one_mux(select[0], select[1], b[2], not(b[2]), ZERO_IN, not(ZERO_IN));
-    let y3: bool = four_to_one_mux(select[0], select[1], b[3], not(b[3]), ZERO_IN, not(ZERO_IN));
+    // Modified 4-to-1 mux for decrement support
+    let y0: bool = four_to_one_mux(select[0], select[1],
+                                   b[0],           // 00: A + B
+                                   not(b[0]),      // 01: A + not(B)
+                                   ZERO_IN,        // 10: A + 0 (transfer)
+                                   ONE_IN);        // 11: A + 1 (but we'll modify carry)
 
-    // Final Bit Outputs
-    let (d0, carry_1): (bool, bool) = full_adder(a[0], y0, carry_in);
+    let y1: bool = four_to_one_mux(select[0], select[1], b[1], not(b[1]), ZERO_IN, ONE_IN);
+    let y2: bool = four_to_one_mux(select[0], select[1], b[2], not(b[2]), ZERO_IN, ONE_IN);
+    let y3: bool = four_to_one_mux(select[0], select[1], b[3], not(b[3]), ZERO_IN, ONE_IN);
+
+    // Special carry handling for decrement
+    let initial_carry = if select == [true, true] {
+        false  // For decrement: A + 11111111 + 0 = A - 1
+    } else {
+        carry_in
+    };
+
+    let (d0, carry_1): (bool, bool) = full_adder(a[0], y0, initial_carry);
     let (d1, carry_2): (bool, bool) = full_adder(a[1], y1, carry_1);
     let (d2, carry_3): (bool, bool) = full_adder(a[2], y2, carry_2);
     let (d3, carry_out): (bool, bool) = full_adder(a[3], y3, carry_3);
 
     return (carry_out, d3, d2, d1, d0);
 }
+
