@@ -11,7 +11,7 @@ pub fn or(val1: bool, val2: bool) -> bool {
 }
 
 pub fn xor(val1: bool, val2: bool) -> bool {
-    if (val1 == val2) {
+    if val1 == val2 {
         return false;
     }
     return true;

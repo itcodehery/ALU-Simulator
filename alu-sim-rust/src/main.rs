@@ -1,8 +1,9 @@
 use eframe::egui;
 
+use crate::comb_circuits::{arithmetic_circuit::arithmetic_circuit, logic_circuit::logic_circuit};
+
 // Import your existing circuit modules
 mod comb_circuits;
-
 
 fn main() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
@@ -13,20 +14,28 @@ fn main() -> Result<(), eframe::Error> {
     eframe::run_native(
         "ALU Simulator",
         options,
-        Box::new(|_cc| Ok(Box::new(ALUSim::default())),
-        ))
+        Box::new(|_cc| Ok(Box::new(ALUSim::default()))),
+    )
 }
 
 #[derive(Default)]
 struct ALUSim {
     operation: String,
-    operation_type:String,
-    result: String,
+    operation_type: String,
+    result: [bool; 5],
     initial_num_1: [bool; 4],
     initial_num_2: [bool; 4],
 }
 
-impl eframe::App for ALUSim  {
+fn display_bool_as_int(a: bool) -> i32 {
+    if a {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+impl eframe::App for ALUSim {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.operation_type.is_empty() {
@@ -64,9 +73,12 @@ impl eframe::App for ALUSim  {
                     ui.label("Operation: ");
                     ui.radio_value(&mut self.operation, "add".parse().unwrap(), "Addition");
                     ui.radio_value(&mut self.operation, "sub".parse().unwrap(), "Subtraction");
+                    ui.radio_value(&mut self.operation, "and".parse().unwrap(), "Bitwise AND");
+                    ui.radio_value(&mut self.operation, "or".parse().unwrap(), "Bitwise OR");
+                    ui.radio_value(&mut self.operation, "xor".parse().unwrap(), "Bitwise XOR");
+                    ui.radio_value(&mut self.operation, "not".parse().unwrap(), "Bitwise NOT");
                 });
                 ui.separator();
-
             }
             // Bits of A and B
             ui.horizontal(|ui| {
@@ -92,10 +104,37 @@ impl eframe::App for ALUSim  {
             }
             ui.separator();
 
-        // Submit
-            let _ = ui.button("Perform Action");
+            // Submit
+            let response = ui.button("Perform Action");
+            if response.clicked() {
+                if self.operation_type == "bin" {
+                    if self.operation == "add" || self.operation == "sub" {
+                        self.result = arithmetic_circuit(
+                            self.initial_num_1,
+                            self.initial_num_2,
+                            [false, false],
+                            false,
+                        )
+                        .into()
+                    }
+                    let temp_array =
+                        logic_circuit(self.initial_num_1, self.initial_num_2, &self.operation);
+                    for i in 1..=4 {
+                        self.result[i] = temp_array[i - 1];
+                    }
+                }
+            }
+            ui.separator();
 
+            // Display results
+            if !self.result.is_empty() {
+                ui.horizontal(|ui| {
+                    ui.label("Result: ");
+                    for i in 0..4 {
+                        ui.label(format!("{}", display_bool_as_int(self.result[i])));
+                    }
+                });
+            }
         });
-
     }
 }
